@@ -1,42 +1,38 @@
-# MSPaintify
+# Drawtify
 
-[<img src="https://img.youtube.com/vi/7CCoBvbluHA/0.jpg">](https://youtu.be/7CCoBvbluHA "Run Python on Cloudflare's planetary network")
+A Cloudflare Python Worker that turns photos into drawings, in a style of your choice:
 
-A Cloudflare Python Worker that turns photos into delightfully terrible MS Paint-style drawings using OpenAI's GPT-Image-2 via AI Gateway.
+- **Bad Pixel Art** — chunky, wonky 8-bit redraws (OpenAI `gpt-image-2`)
+- **Line Doodle** — minimalist monoline contour line art on a transparent background, like a Procreate trace: perfect for stickers, clipart, collages and social overlays (OpenAI `gpt-image-1.5`, which supports transparent PNGs)
 
-Built for events! Multiple events can be configured via Workers KV without code changes.
+Both run through AI Gateway. Built for events: each event is configured in Workers KV with no code changes.
+
+Based on [craigsdennis/mspaintify-python-workers](https://github.com/craigsdennis/mspaintify-python-workers).
 
 ## How it works
 
-1. **Upload** — Take a photo on your phone via the capture page
-2. **Process** — A durable Python Workflow sends your photo to GPT-Image-2 with a delightfully unhinged prompt
-3. **Display** — The presenter screen shows a live slideshow of before/after pairs
+1. **Capture** — take a photo on your phone and pick a style
+2. **Process** — a durable Python Workflow sends the photo to the image model with that style's prompt
+3. **Display** — the presenter screen shows a live slideshow of before/after pairs
 
 ## Architecture
 
-- **Python Worker** ([`src/worker.py`](src/worker.py)) — FastAPI app on Pyodide/WASM handling uploads and serving static assets
-- **Workflow** ([`src/workflow.py`](src/workflow.py)) — Durable DAG-based execution for image generation
-- **Frontend** (`assets/`) — Presenter screen, mobile capture, admin gallery
-- **Storage** — R2 for images, KV for per-event config, AI Gateway for image generation
+- **Python Worker** (`src/worker.py`) — FastAPI app (Pyodide/WASM) for uploads; serves static assets
+- **Workflow** (`src/workflow.py`) — durable steps: load config → read photo → generate → save to R2
+- **Styles** (`src/styles.py`) — the art styles (model, prompt, params). Add a style here, then add a button in `assets/capture.html`
+- **Frontend** (`assets/`) — presenter screen, mobile capture, admin gallery
+- **Storage** — R2 for images, KV for per-event config
 
-## Event Configuration
-
-Set up a new event without deploying:
+## Event configuration
 
 ```bash
-npx wrangler kv key put <event-slug> '{"title":"My Event","additionalInstructions":"Add a logo in the corner"}' --binding=CONFIG --remote
+npx wrangler kv key put my-event '{"title":"My Event","date":"2026-06-12"}' --binding=CONFIG --remote
 ```
 
+Fields: `title` (required), `date` (optional; `YYYY-MM-DD` is formatted nicely, any other text is shown as-is), `additionalInstructions` (optional; appended to the prompt of every style).
+
 Then visit:
-- Presenter: `https://mspaintify.<user>.workers.dev/?event=<event-slug>`
-- Capture: `https://mspaintify.<user>.workers.dev/capture.html?event=<event-slug>`
+- Presenter: `https://drawtify.<your-subdomain>.workers.dev/?event=my-event`
+- Capture: `https://drawtify.<your-subdomain>.workers.dev/capture.html?event=my-event`
 
-## Resources
-
-- [Python Workers Documentation](https://developers.cloudflare.com/workers/languages/python/)
-- [Cloudflare Python Workers Examples](https://github.com/cloudflare/python-workers-examples)
-- [Pyodide](https://pyodide.org/) — Python in the browser (and in Workers!)
-- [Workflows Python](https://developers.cloudflare.com/workflows/python/)
-- [AI Gateway — GPT-Image-2](https://developers.cloudflare.com/ai/models/openai/gpt-image-2/)
-- [Workers KV](https://developers.cloudflare.com/workers/platform/storage-options/#workers-kv)
-- [Cloudflare R2](https://developers.cloudflare.com/r2/)
+See [DEPLOY.md](DEPLOY.md) for first-time setup.

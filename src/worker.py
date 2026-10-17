@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse, Response
 from pyodide.ffi import to_js as _to_js
 from workers import WorkerEntrypoint
 
-from workflow import MspaintWorkflow
+from styles import DEFAULT_EVENT, STYLES, normalize_style, output_key_for
+from workflow import DrawtifyWorkflow
 
 app = FastAPI()
 
@@ -20,14 +21,14 @@ def to_js(obj):
 
 def get_event_prefix(request: Request) -> str:
     """Get the R2 key prefix for the current event slug."""
-    event = request.query_params.get("event", "default")
+    event = request.query_params.get("event", DEFAULT_EVENT)
     return f"{event}/"
 
 
 @app.get("/api/config")
 async def get_config(request: Request):
     env = request.scope["env"]
-    event = request.query_params.get("event", "default")
+    event = request.query_params.get("event", DEFAULT_EVENT)
 
     config_json = await env.CONFIG.get(event)
     if not config_json:
@@ -37,6 +38,11 @@ async def get_config(request: Request):
 
     config = json.loads(config_json)
     return {"event": event, **config}
+
+
+@app.get("/api/styles")
+async def list_styles():
+    return {"styles": [{"id": k, "label": v["label"]} for k, v in STYLES.items()]}
 
 
 @app.get("/api/health")
@@ -50,8 +56,10 @@ async def upload_photo(request: Request, file: UploadFile = File(...)):
     bucket = env.MY_BUCKET
     prefix = get_event_prefix(request)
 
-    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    key = f"{prefix}photos/{uuid.uuid4()}.{ext}"
+    # The key extension is cosmetic (the content type is stored with the object),
+    # so every original is stored as .jpg. This keeps before/after keys easy to pair.
+    key = f"{prefix}photos/{uuid.uuid4()}.jpg"
+    style = normalize_style(request.query_params.get("style"))
 
     content = await file.read()
 
@@ -62,14 +70,18 @@ async def upload_photo(request: Request, file: UploadFile = File(...)):
         customMetadata={"filename": file.filename or "unknown"},
     )
 
-    # Auto-trigger the MSPaintify workflow
-    event = request.query_params.get("event", "default")
-    options = to_js({"params": {"image_key": key, "event_slug": event}})
-    workflow_instance = await env.MSPAINT_WORKFLOW.create(options)
+    # Auto-trigger the Drawtify workflow
+    event = request.query_params.get("event", DEFAULT_EVENT)
+    options = to_js(
+        {"params": {"image_key": key, "event_slug": event, "style": style}}
+    )
+    workflow_instance = await env.DRAWTIFY_WORKFLOW.create(options)
 
     return JSONResponse(
         {
             "key": key,
+            "output_key": output_key_for(event, key, style),
+            "style": style,
             "workflow_id": workflow_instance.id,
             "status": "processing",
             "filename": file.filename,
@@ -86,8 +98,8 @@ async def list_photos(request: Request):
     prefix = get_event_prefix(request)
     list_type = request.query_params.get("type", "photos")
 
-    if list_type == "mspaintified":
-        list_prefix = f"{prefix}mspaintified/"
+    if list_type == "drawings":
+        list_prefix = f"{prefix}drawings/"
     else:
         list_prefix = f"{prefix}photos/"
 
@@ -134,25 +146,30 @@ async def get_photo(request: Request, key: str):
 @app.get("/api/workflow-status/{workflow_id}")
 async def workflow_status(request: Request, workflow_id: str):
     env = request.scope["env"]
-    instance = await env.MSPAINT_WORKFLOW.get(workflow_id)
+    instance = await env.DRAWTIFY_WORKFLOW.get(workflow_id)
     status = await instance.status()
     return {"status": status, "workflow_id": workflow_id}
 
 
-@app.post("/api/mspaintify/{key:path}")
-async def mspaintify(request: Request, key: str):
+@app.post("/api/drawtify/{key:path}")
+async def drawtify(request: Request, key: str):
     env = request.scope["env"]
     image_key = urllib.parse.unquote(key)
-    event = request.query_params.get("event", "default")
+    event = request.query_params.get("event", DEFAULT_EVENT)
+    style = normalize_style(request.query_params.get("style"))
 
-    options = to_js({"params": {"image_key": image_key, "event_slug": event}})
-    instance = await env.MSPAINT_WORKFLOW.create(options)
+    options = to_js(
+        {"params": {"image_key": image_key, "event_slug": event, "style": style}}
+    )
+    instance = await env.DRAWTIFY_WORKFLOW.create(options)
 
     return JSONResponse(
         {
             "workflow_id": instance.id,
             "status": "started",
             "image_key": image_key,
+            "output_key": output_key_for(event, image_key, style),
+            "style": style,
         }
     )
 

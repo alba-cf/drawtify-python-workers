@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>MSPaintify</title>
+  <title>Drawtify</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127912;</text></svg>">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -19,8 +19,8 @@
       
       <div class="capture-overlay">
         <div class="capture-header">
-          <h2>MSPaintify</h2>
-          <p>Make your photo slop!</p>
+          <h2>Drawtify</h2>
+          <p>Turn your photo into a drawing!</p>
         </div>
         
         <button class="shutter-btn" id="shutterBtn">
@@ -41,11 +41,27 @@
         <img id="previewImg" src="" alt="Preview">
       </div>
       
+      <div class="style-picker" id="stylePicker">
+        <div class="style-picker-title">Pick a style</div>
+        <div class="style-options">
+          <button type="button" class="style-option selected" data-style="pixel">
+            <span class="style-emoji">&#128126;</span>
+            <span class="style-name">Bad Pixel Art</span>
+            <span class="style-desc">Chunky, wonky 8-bit</span>
+          </button>
+          <button type="button" class="style-option" data-style="doodle">
+            <span class="style-emoji">&#9999;&#65039;</span>
+            <span class="style-name">Line Doodle</span>
+            <span class="style-desc">Minimal monoline outline sticker</span>
+          </button>
+        </div>
+      </div>
+
       <div class="preview-actions">
         <button class="btn-retake" id="retakeBtn">Retake</button>
         <button class="btn-slop" id="makeSlopBtn">
           <span class="sparkle">&#10024;</span>
-          Slop It Up!
+          Draw It!
           <span class="sparkle">&#10024;</span>
         </button>
       </div>
@@ -54,7 +70,7 @@
     <!-- Processing View -->
     <div class="processing-view hidden" id="processingView">
       <div class="processing-content">
-        <h2>MSPaintify</h2>
+        <h2>Drawtify</h2>
         <div class="progress-bar">
           <div class="progress-fill" id="progressFill"></div>
         </div>
@@ -67,7 +83,7 @@
     <!-- Result View -->
     <div class="result-view hidden" id="resultView">
       <div class="result-header">
-        <h2>It's slop! <span class="emoji">&#128525;</span></h2>
+        <h2>Drawtified! <span class="emoji">&#128525;</span></h2>
       </div>
 
       <div class="result-comparison" id="resultComparison">
@@ -77,15 +93,16 @@
         </div>
         <div class="result-photo">
           <div class="result-label">After</div>
-          <img id="resultAfter" src="" alt="After">
+          <img id="resultAfter" src="" alt="After" class="result-after-img">
         </div>
       </div>
 
-      <p class="result-message">Check the big screen to see your slop!</p>
+      <p class="result-message">Check the big screen to see your drawing!</p>
 
       <div class="result-actions">
-        <button class="btn-share" id="shareBtn">📤 Share My Slop</button>
-        <button class="btn-again" id="againBtn">Make Another Slop</button>
+        <a class="btn-download" id="downloadBtn" download="drawtify.png">&#11015;&#65039; Download</a>
+        <button class="btn-share" id="shareBtn">📤 Share My Drawing</button>
+        <button class="btn-again" id="againBtn">Make Another</button>
       </div>
     </div>
 

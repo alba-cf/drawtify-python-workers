@@ -4,7 +4,7 @@
 // ========================================
 
 const urlParams = new URLSearchParams(window.location.search);
-const EVENT_SLUG = urlParams.get('event') || 'default';
+const EVENT_SLUG = urlParams.get('event') || 'my-event';
 
 const API_BASE = '';
 
@@ -29,6 +29,8 @@ const againBtn = document.getElementById('againBtn');
 const errorView = document.getElementById('errorView');
 const errorText = document.getElementById('errorText');
 const retryBtn = document.getElementById('retryBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const styleOptions = document.querySelectorAll('.style-option');
 const fileInput = document.getElementById('fileInput');
 const pageTitle = document.querySelector('title');
 const captureHeaderH2 = document.querySelector('.capture-header h2');
@@ -39,6 +41,8 @@ let capturedBlob = null;
 let workflowId = null;
 let typewriterTimeout = null;
 let eventConfig = null;
+let selectedStyle = 'pixel';
+let outputKey = null;
 
 // Cloudflare Workers selling points
 const SELLING_POINTS = [
@@ -67,7 +71,7 @@ async function initEvent() {
     const res = await fetch(`${API_BASE}/api/config?event=${EVENT_SLUG}`);
     if (res.ok) {
       eventConfig = await res.json();
-      const title = eventConfig.title || 'MSPaintify';
+      const title = eventConfig.title || 'Drawtify';
       pageTitle.textContent = title;
       captureHeaderH2.textContent = title;
       processingTitle.textContent = title;
@@ -193,7 +197,7 @@ async function uploadAndProcess() {
   formData.append('file', new File([capturedBlob], 'capture.jpg', { type: 'image/jpeg' }));
 
   try {
-    const res = await fetch(`${API_BASE}/api/upload?event=${EVENT_SLUG}`, {
+    const res = await fetch(`${API_BASE}/api/upload?event=${EVENT_SLUG}&style=${selectedStyle}`, {
       method: 'POST',
       body: formData,
     });
@@ -204,10 +208,11 @@ async function uploadAndProcess() {
     }
 
     workflowId = data.workflow_id;
+    outputKey = data.output_key;
     updateProgress(30);
 
     // Poll for workflow completion
-    await pollWorkflow(data.key);
+    await pollWorkflow(data.key, data.output_key);
 
   } catch (err) {
     stopTypewriter();
@@ -216,7 +221,7 @@ async function uploadAndProcess() {
 }
 
 // Poll workflow status
-async function pollWorkflow(originalKey) {
+async function pollWorkflow(originalKey, resultKey) {
   const progressSteps = [40, 55, 70, 85, 95];
   let progressIndex = 0;
 
@@ -229,9 +234,8 @@ async function pollWorkflow(originalKey) {
           progressIndex++;
         }
 
-        // Check if mspaintified version exists
-        const mspaintKey = originalKey.replace(`${EVENT_SLUG}/photos/`, `${EVENT_SLUG}/mspaintified/`);
-        const res = await fetch(`${API_BASE}/api/photos/${mspaintKey}`);
+        // Check if the drawing exists yet
+        const res = await fetch(`${API_BASE}/api/photos/${resultKey}`);
 
         if (res.ok) {
           // It's done!
@@ -240,7 +244,7 @@ async function pollWorkflow(originalKey) {
           updateProgress(100);
 
           setTimeout(() => {
-            showResult(originalKey, mspaintKey);
+            showResult(originalKey, resultKey);
             resolve();
           }, 800);
         }
@@ -270,6 +274,9 @@ function showResult(beforeKey, afterKey) {
 
   resultBefore.src = `${API_BASE}/api/photos/${beforeKey}`;
   resultAfter.src = `${API_BASE}/api/photos/${afterKey}`;
+  resultAfter.classList.toggle('transparent-bg', selectedStyle === 'doodle');
+  downloadBtn.href = resultAfter.src;
+  downloadBtn.download = `drawtify-${selectedStyle}.png`;
 }
 
 // Share photos using Web Share API
@@ -295,12 +302,12 @@ async function sharePhotos() {
     ]);
 
     const beforeFile = new File([beforeBlob], 'before.jpg', { type: 'image/jpeg' });
-    const afterFile = new File([afterBlob], 'slop.jpg', { type: 'image/jpeg' });
+    const afterFile = new File([afterBlob], `drawtify-${selectedStyle}.png`, { type: afterBlob.type || 'image/png' });
 
-    const title = eventConfig?.title || 'MSPaintify';
+    const title = eventConfig?.title || 'Drawtify';
     const shareData = {
-      title: 'My MSPaintify Slop',
-      text: `I mspaintified at ${title}. Check out my slop 🧡`,
+      title: 'My Drawtify Drawing',
+      text: `I got drawtified at ${title}. Check out my drawing 🧡`,
       files: [beforeFile, afterFile]
     };
 
@@ -309,18 +316,18 @@ async function sharePhotos() {
       shareBtn.textContent = '✅ Shared!';
       setTimeout(() => {
         shareBtn.disabled = false;
-        shareBtn.textContent = '📤 Share My Slop';
+        shareBtn.textContent = '📤 Share My Drawing';
       }, 2000);
     } else {
       alert('Sharing files not supported on this device');
       shareBtn.disabled = false;
-      shareBtn.textContent = '📤 Share My Slop';
+      shareBtn.textContent = '📤 Share My Drawing';
     }
   } catch (err) {
     // User cancelled or error
     console.log('Share cancelled or failed:', err);
     shareBtn.disabled = false;
-    shareBtn.textContent = '📤 Share My Slop';
+    shareBtn.textContent = '📤 Share My Drawing';
   }
 }
 
@@ -383,6 +390,7 @@ function reset() {
   previewImg.src = '';
   resultBefore.src = '';
   resultAfter.src = '';
+  outputKey = null;
   updateProgress(0);
   stopTypewriter();
 
@@ -399,6 +407,14 @@ function reset() {
 if (!navigator.share || !navigator.canShare) {
   document.body.classList.add('no-share');
 }
+
+// Style picker
+styleOptions.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selectedStyle = btn.dataset.style;
+    styleOptions.forEach((b) => b.classList.toggle('selected', b === btn));
+  });
+});
 
 // Event listeners
 shutterBtn.addEventListener('click', capturePhoto);

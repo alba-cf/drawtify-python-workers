@@ -8,9 +8,9 @@ const POLL_INTERVAL = 3000;
 const SLIDE_INTERVAL = 5000;
 
 const urlParams = new URLSearchParams(window.location.search);
-const EVENT_SLUG = urlParams.get('event') || 'default';
+const EVENT_SLUG = urlParams.get('event') || 'my-event';
 
-let mspaintifiedPhotos = [];
+let drawings = [];
 let currentSlide = 0;
 let slideshowTimer = null;
 let eventConfig = null;
@@ -24,9 +24,23 @@ const afterImg = document.getElementById('afterImg');
 const pageTitle = document.querySelector('title');
 const pageHeader = document.querySelector('.presenter-header h1');
 const qrLabel = document.querySelector('.qr-label');
+const eventDate = document.getElementById('eventDate');
+const afterLabel = document.getElementById('afterLabel');
+const afterFrame = document.getElementById('afterFrame');
+
+const STYLE_LABELS = { pixel: 'BAD PIXEL ART', doodle: 'LINE DOODLE' };
+
+// Show a configured date nicely: ISO dates (2026-06-12) are formatted, anything else is shown as-is
+function formatDate(value) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  return value;
+}
 
 // Init - start centered, move to corner when photos arrive
-if (mspaintifiedPhotos.length === 0) {
+if (drawings.length === 0) {
   qrSection.classList.add('centered');
 }
 
@@ -36,11 +50,15 @@ async function initEvent() {
     const res = await fetch(`${API_BASE}/api/config?event=${EVENT_SLUG}`);
     if (res.ok) {
       eventConfig = await res.json();
-      const title = eventConfig.title || 'MSPaintify';
+      const title = eventConfig.title || 'Drawtify';
       pageTitle.textContent = title;
       pageHeader.textContent = title;
+      if (eventConfig.date) {
+        eventDate.textContent = formatDate(eventConfig.date);
+        eventDate.hidden = false;
+      }
       if (eventConfig.title) {
-        qrLabel.textContent = `MSPaintify yourself at ${title}!`;
+        qrLabel.textContent = `Drawtify yourself at ${title}!`;
       }
     } else {
       console.warn('No config found for event:', EVENT_SLUG);
@@ -78,21 +96,29 @@ function initQR() {
 // Poll for new mspaintified photos
 async function pollPhotos() {
   try {
-    const res = await fetch(`${API_BASE}/api/photos?event=${EVENT_SLUG}&type=mspaintified`);
+    const res = await fetch(`${API_BASE}/api/photos?event=${EVENT_SLUG}&type=drawings`);
     const data = await res.json();
 
     if (!res.ok) throw new Error(data.error);
 
     if (data.photos && data.photos.length > 0) {
-      // Map mspaintified keys back to original keys
-      const newPhotos = data.photos.map(photo => ({
-        afterKey: photo.key,
-        beforeKey: photo.key.replace(`${EVENT_SLUG}/mspaintified/`, `${EVENT_SLUG}/photos/`),
-      }));
+      // Drawings are stored as <event>/drawings/<uuid>--<style>.png
+      // Map them back to the original <event>/photos/<uuid>.jpg
+      const newPhotos = data.photos.map(photo => {
+        const filename = photo.key.split('/').pop().replace(/\.[^.]+$/, '');
+        const sep = filename.lastIndexOf('--');
+        const stem = sep >= 0 ? filename.slice(0, sep) : filename;
+        const style = sep >= 0 ? filename.slice(sep + 2) : 'pixel';
+        return {
+          afterKey: photo.key,
+          beforeKey: `${EVENT_SLUG}/photos/${stem}.jpg`,
+          style,
+        };
+      });
 
       // Check if we have new photos
-      const hadPhotos = mspaintifiedPhotos.length > 0;
-      mspaintifiedPhotos = newPhotos;
+      const hadPhotos = drawings.length > 0;
+      drawings = newPhotos;
 
       if (!hadPhotos) {
         // First photo arrived!
@@ -115,13 +141,15 @@ function startSlideshow() {
 
 // Show a specific slide
 function showSlide(index) {
-  if (mspaintifiedPhotos.length === 0) return;
+  if (drawings.length === 0) return;
 
-  currentSlide = index % mspaintifiedPhotos.length;
-  const photo = mspaintifiedPhotos[currentSlide];
+  currentSlide = index % drawings.length;
+  const photo = drawings[currentSlide];
 
   beforeImg.src = `${API_BASE}/api/photos/${photo.beforeKey}`;
   afterImg.src = `${API_BASE}/api/photos/${photo.afterKey}`;
+  afterLabel.textContent = STYLE_LABELS[photo.style] || 'AFTER';
+  afterFrame.classList.toggle('transparent-bg', photo.style === 'doodle');
 
   slideshowPair.classList.remove('active');
   // Force reflow
@@ -136,12 +164,12 @@ function nextSlide() {
 
 // Go to previous slide
 function prevSlide() {
-  showSlide(currentSlide - 1 + mspaintifiedPhotos.length);
+  showSlide(currentSlide - 1 + drawings.length);
 }
 
 // Keyboard controls
 function handleKeydown(e) {
-  if (mspaintifiedPhotos.length === 0) return;
+  if (drawings.length === 0) return;
 
   if (e.key === 'ArrowRight') {
     e.preventDefault();

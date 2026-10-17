@@ -1,5 +1,5 @@
 const urlParams = new URLSearchParams(window.location.search);
-const EVENT_SLUG = urlParams.get('event') || 'default';
+const EVENT_SLUG = urlParams.get('event') || 'my-event';
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -17,7 +17,7 @@ const errorDiv = document.getElementById('error');
 const refreshGalleryBtn = document.getElementById('refreshGallery');
 const galleryGrid = document.getElementById('galleryGrid');
 const refreshMspaintifiedBtn = document.getElementById('refreshMspaintified');
-const mspaintifiedGrid = document.getElementById('mspaintifiedGrid');
+const drawtifiedGrid = document.getElementById('drawtifiedGrid');
 
 let stream = null;
 let capturedBlob = null;
@@ -147,11 +147,11 @@ async function loadGallery() {
           <div>${(photo.size / 1024).toFixed(1)} KB</div>
           <div>${new Date(photo.uploaded).toLocaleString()}</div>
         </div>
-        <button class="mspaintify-btn" data-key="${photo.key}">🎨 MSPaintify</button>
+        <button class="drawtify-btn" data-key="${photo.key}">🎨 Drawtify</button>
       `;
-      item.querySelector('.mspaintify-btn').addEventListener('click', (e) => {
+      item.querySelector('.drawtify-btn').addEventListener('click', (e) => {
         e.stopPropagation();
-        mspaintify(photo.key, item);
+        drawtify(photo.key, item);
       });
       galleryGrid.appendChild(item);
     }
@@ -161,18 +161,18 @@ async function loadGallery() {
 }
 
 async function loadMspaintified() {
-  mspaintifiedGrid.innerHTML = '<p>Loading...</p>';
+  drawtifiedGrid.innerHTML = '<p>Loading...</p>';
   try {
-    const res = await fetch(`/api/photos?event=${EVENT_SLUG}&type=mspaintified`);
+    const res = await fetch(`/api/photos?event=${EVENT_SLUG}&type=drawings`);
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.error || 'Failed to load mspaintified images');
+      throw new Error(data.error || 'Failed to load drawtified images');
     }
 
-    mspaintifiedGrid.innerHTML = '';
+    drawtifiedGrid.innerHTML = '';
     if (!data.photos || data.photos.length === 0) {
-      mspaintifiedGrid.innerHTML = '<p>No mspaintified images yet.</p>';
+      drawtifiedGrid.innerHTML = '<p>No drawtified images yet.</p>';
       return;
     }
 
@@ -187,10 +187,10 @@ async function loadMspaintified() {
           <div>${new Date(photo.uploaded).toLocaleString()}</div>
         </div>
       `;
-      mspaintifiedGrid.appendChild(item);
+      drawtifiedGrid.appendChild(item);
     }
   } catch (err) {
-    mspaintifiedGrid.innerHTML = `<p style="color:#c00">${err.message}</p>`;
+    drawtifiedGrid.innerHTML = `<p style="color:#c00">${err.message}</p>`;
   }
 }
 
@@ -220,23 +220,23 @@ function hideError() {
   errorDiv.classList.add('hidden');
 }
 
-async function mspaintify(key, itemEl) {
-  const btn = itemEl.querySelector('.mspaintify-btn');
+async function drawtify(key, itemEl) {
+  const btn = itemEl.querySelector('.drawtify-btn');
   btn.disabled = true;
   btn.textContent = 'Processing...';
 
   try {
-    const res = await fetch(`/api/mspaintify/${key}?event=${EVENT_SLUG}`, { method: 'POST' });
+    const res = await fetch(`/api/drawtify/${key}?event=${EVENT_SLUG}&style=pixel`, { method: 'POST' });
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.error || 'MSPaintify failed');
+      throw new Error(data.error || 'Drawtify failed');
     }
 
-    btn.textContent = 'Done! Check MSPaintified tab';
+    btn.textContent = 'Done! Check Drawtified tab';
     btn.style.background = '#27ae60';
     setTimeout(() => {
-      btn.textContent = '🎨 MSPaintify';
+      btn.textContent = '🎨 Drawtify';
       btn.style.background = '';
       btn.disabled = false;
     }, 3000);
@@ -244,7 +244,7 @@ async function mspaintify(key, itemEl) {
     btn.textContent = 'Error - try again';
     btn.style.background = '#c0392b';
     setTimeout(() => {
-      btn.textContent = '🎨 MSPaintify';
+      btn.textContent = '🎨 Drawtify';
       btn.style.background = '';
       btn.disabled = false;
     }, 3000);

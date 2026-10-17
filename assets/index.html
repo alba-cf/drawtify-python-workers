@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MSPaintify</title>
+  <title>Drawtify</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127912;</text></svg>">
   <link rel="stylesheet" href="/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -11,17 +11,18 @@
 <body class="presenter">
   <div class="presenter-container">
     <header class="presenter-header">
-      <h1>MSPaintify</h1>
+      <h1>Drawtify</h1>
+      <p class="presenter-date" id="eventDate" hidden></p>
     </header>
 
     <div class="qr-section">
       <div class="qr-pointer">
         <span class="qr-pointer-arrow">→</span>
-        <span class="qr-pointer-text">Scan to get your selfie mspaintified</span>
+        <span class="qr-pointer-text">Scan to get your selfie drawtified</span>
       </div>
       <div class="qr-box">
         <div id="qrcode"></div>
-        <p class="qr-label">MSPaintify yourself!</p>
+        <p class="qr-label">Drawtify yourself!</p>
       </div>
     </div>
 
@@ -31,8 +32,8 @@
           <div class="label">BEFORE</div>
           <img id="beforeImg" src="" alt="Before">
         </div>
-        <div class="photo-frame after">
-          <div class="label">AFTER</div>
+        <div class="photo-frame after" id="afterFrame">
+          <div class="label" id="afterLabel">AFTER</div>
           <img id="afterImg" src="" alt="After">
         </div>
       </div>
@@ -52,11 +53,11 @@
         <a href="https://developers.cloudflare.com/r2/" target="_blank" rel="noopener">R2</a>,
         <a href="https://developers.cloudflare.com/workers/platform/storage-options/#workers-kv" target="_blank" rel="noopener">KV</a>,
         <a href="https://developers.cloudflare.com/workflows/python/" target="_blank" rel="noopener">Workflows</a>,
-        <a href="https://developers.cloudflare.com/ai/models/openai/gpt-image-2/" target="_blank" rel="noopener">AI Gateway</a>
+        <a href="https://developers.cloudflare.com/ai-gateway/" target="_blank" rel="noopener">AI Gateway</a>
         )
       </p>
       <p class="footer-line">
-        <a href="https://github.com/craigsdennis/mspaintify-python-workers" target="_blank" rel="noopener">👀 the code</a>
+        <a href="https://github.com/alba-cf/drawtify-python-workers" target="_blank" rel="noopener">👀 the code</a>
       </p>
     </footer>
   </div>

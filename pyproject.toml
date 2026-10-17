@@ -1,5 +1,5 @@
 [project]
-name = "mspaintify"
+name = "drawtify"
 version = "0.1.0"
 description = "Python Worker with FastAPI for photo uploads to R2"
 readme = "README.md"

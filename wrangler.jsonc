@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "mspaintify",
+	"name": "drawtify",
 	"main": "src/worker.py",
 	"compatibility_date": "2026-05-13",
 	"compatibility_flags": [
@@ -12,16 +12,20 @@
 		"directory": "./assets/",
 		"binding": "ASSETS"
 	},
+	"vars": {
+		// ID of the AI Gateway used for image generation (create it in the dashboard)
+		"GATEWAY_ID": "drawtify"
+	},
 	"r2_buckets": [
 		{
 			"binding": "MY_BUCKET",
-			"bucket_name": "mspaint-photos"
+			"bucket_name": "drawtify-photos"
 		}
 	],
+	// No "id": wrangler creates the KV namespace automatically on first deploy.
 	"kv_namespaces": [
 		{
-			"binding": "CONFIG",
-			"id": "b9eaed9dd0034933baeef02b17872923"
+			"binding": "CONFIG"
 		}
 	],
 	"ai": {
@@ -29,9 +33,9 @@
 	},
 	"workflows": [
 		{
-			"name": "mspaint-workflow",
-			"binding": "MSPAINT_WORKFLOW",
-			"class_name": "MspaintWorkflow"
+			"name": "drawtify-workflow",
+			"binding": "DRAWTIFY_WORKFLOW",
+			"class_name": "DrawtifyWorkflow"
 		}
 	],
 	"observability": {
