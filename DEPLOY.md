@@ -8,9 +8,7 @@ Requirements: a Cloudflare account on the **Workers Paid** plan (Workflows + R2)
    npx wrangler login
    ```
 
-2. **Create the AI Gateway** named `drawtify` (Dashboard → AI → AI Gateway → Create Gateway).
-   If you pick another name, change `GATEWAY_ID` in `wrangler.jsonc`.
-   OpenAI image models are billed through Cloudflare (unified billing) or your own OpenAI key added to the gateway.
+2. **AI credits.** The OpenAI image models are billed through Cloudflare AI Gateway. Either add credits (Dashboard → AI → AI Gateway → Credits / unified billing) or create a gateway with your own OpenAI key, then set `"vars": { "GATEWAY_ID": "<gateway-id>" }` in `wrangler.jsonc`. A gateway is optional: without `GATEWAY_ID` the models are called directly. Without credits, image generation fails with "Insufficient AI Gateway credits".
 
 3. **Deploy.** The R2 bucket (`drawtify-photos`) and the KV namespace are created automatically on first deploy.
    ```bash
