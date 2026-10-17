@@ -8,7 +8,7 @@ Requirements: a Cloudflare account on the **Workers Paid** plan (Workflows + R2)
    npx wrangler login
    ```
 
-2. **AI credits.** The OpenAI image models are billed through Cloudflare AI Gateway. Either add credits (Dashboard → AI → AI Gateway → Credits / unified billing) or create a gateway with your own OpenAI key, then set `"vars": { "GATEWAY_ID": "<gateway-id>" }` in `wrangler.jsonc`. A gateway is optional: without `GATEWAY_ID` the models are called directly. Without credits, image generation fails with "Insufficient AI Gateway credits".
+2. **Image model.** By default Drawtify uses FLUX.2 [klein] on Workers AI, which is billed in Neurons (free daily allocation) and needs no extra setup. To use OpenAI `gpt-image-2` instead, add `"vars": { "IMAGE_PROVIDER": "openai", "GATEWAY_ID": "<gateway-id>" }` in `wrangler.jsonc` and make sure the gateway has credits (or your own OpenAI key). Without credits, OpenAI calls fail with "Insufficient AI Gateway credits".
 
 3. **Deploy.** The R2 bucket (`drawtify-photos`) and the KV namespace are created automatically on first deploy.
    ```bash
@@ -27,5 +27,5 @@ Requirements: a Cloudflare account on the **Workers Paid** plan (Workflows + R2)
 
 ## Notes
 
-- Line Doodle asks for a transparent background. If the gateway rejects the transparency parameters, the workflow retries without them and relies on the prompt (white/plain background instead of true transparency). Check the Workflow logs if the doodles come back with a white background.
+- Line Doodle is drawn as black lines on white; the browser converts the white to transparency (`assets/transparent.js`), so the Download button gives a transparent PNG. The stored image in R2 is the white-background version.
 - Any extra event: just `kv key put` another slug and use `?event=<slug>`.

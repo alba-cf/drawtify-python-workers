@@ -12,8 +12,9 @@
 		"directory": "./assets/",
 		"binding": "ASSETS"
 	},
-	// Optional: route image generation through an AI Gateway by adding
-	// "vars": { "GATEWAY_ID": "<your-gateway-id>" }
+	// Optional settings (add under "vars"):
+	//   "IMAGE_PROVIDER": "workersai" (default, FLUX.2 klein, billed in Neurons) or "openai" (gpt-image-2 via AI Gateway)
+	//   "GATEWAY_ID": "<gateway-id>"  (AI Gateway to route through; used by the openai provider)
 	"r2_buckets": [
 		{
 			"binding": "MY_BUCKET",

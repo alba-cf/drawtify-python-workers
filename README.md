@@ -2,10 +2,10 @@
 
 A Cloudflare Python Worker that turns photos into drawings, in a style of your choice:
 
-- **Bad Pixel Art** — chunky, wonky 8-bit redraws (OpenAI `gpt-image-2`)
-- **Line Doodle** — minimalist monoline contour line art on a transparent background, like a Procreate trace: perfect for stickers, clipart, collages and social overlays (OpenAI `gpt-image-1.5`, which supports transparent PNGs)
+- **Bad Pixel Art** — chunky, wonky 8-bit redraws
+- **Line Doodle** — minimalist monoline contour line art, like a Procreate trace. The model draws black lines on white and the browser turns the white into transparency, so the downloaded PNG works as a sticker / clipart for collages, scrapbooks and social overlays
 
-Both run through AI Gateway. Built for events: each event is configured in Workers KV with no code changes.
+Images are generated with **FLUX.2 [klein] on Workers AI** (billed in Neurons, free daily allocation; no AI Gateway credits needed). Set `IMAGE_PROVIDER=openai` to use OpenAI `gpt-image-2` through AI Gateway instead. Built for events: each event is configured in Workers KV with no code changes.
 
 Based on [craigsdennis/mspaintify-python-workers](https://github.com/craigsdennis/mspaintify-python-workers).
 

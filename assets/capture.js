@@ -268,14 +268,19 @@ function updateProgress(percent) {
 }
 
 // Show final result
-function showResult(beforeKey, afterKey) {
+async function showResult(beforeKey, afterKey) {
   processingView.classList.add('hidden');
   resultView.classList.remove('hidden');
 
   resultBefore.src = `${API_BASE}/api/photos/${beforeKey}`;
-  resultAfter.src = `${API_BASE}/api/photos/${afterKey}`;
+  let afterUrl = `${API_BASE}/api/photos/${afterKey}`;
   resultAfter.classList.toggle('transparent-bg', selectedStyle === 'doodle');
-  downloadBtn.href = resultAfter.src;
+  if (selectedStyle === 'doodle') {
+    // Black-on-white line art -> transparent PNG sticker
+    try { afterUrl = await makeTransparent(afterUrl); } catch (err) { console.warn(err); }
+  }
+  resultAfter.src = afterUrl;
+  downloadBtn.href = afterUrl;
   downloadBtn.download = `drawtify-${selectedStyle}.png`;
 }
 

@@ -147,7 +147,15 @@ function showSlide(index) {
   const photo = drawings[currentSlide];
 
   beforeImg.src = `${API_BASE}/api/photos/${photo.beforeKey}`;
-  afterImg.src = `${API_BASE}/api/photos/${photo.afterKey}`;
+  const afterUrl = `${API_BASE}/api/photos/${photo.afterKey}`;
+  if (photo.style === 'doodle') {
+    // Line doodles are black-on-white: turn the white into transparency
+    makeTransparent(afterUrl).then((url) => {
+      if (drawings[currentSlide] && drawings[currentSlide].afterKey === photo.afterKey) afterImg.src = url;
+    }).catch(() => { afterImg.src = afterUrl; });
+  } else {
+    afterImg.src = afterUrl;
+  }
   afterLabel.textContent = STYLE_LABELS[photo.style] || 'AFTER';
   afterFrame.classList.toggle('transparent-bg', photo.style === 'doodle');
 

@@ -2,7 +2,7 @@
 
 ## What this is
 
-Cloudflare **Python Worker** (Pyodide/WASM) that turns photos into drawings with OpenAI image models via AI Gateway. Users pick a style (`pixel` or `doodle`). Multi-event support via KV config.
+Cloudflare **Python Worker** (Pyodide/WASM) that turns photos into drawings with FLUX.2 [klein] on Workers AI (default) or OpenAI gpt-image-2 via AI Gateway (`IMAGE_PROVIDER=openai`). Users pick a style (`pixel` or `doodle`). Multi-event support via KV config.
 
 ## Architecture
 
@@ -23,12 +23,12 @@ Cloudflare **Python Worker** (Pyodide/WASM) that turns photos into drawings with
 |---------|----------|
 | `MY_BUCKET` | R2 `drawtify-photos` |
 | `CONFIG` | KV: per-event JSON `{title, date?, additionalInstructions?}` |
-| `AI` | Workers AI / AI Gateway (id from var `GATEWAY_ID`) |
+| `AI` | Workers AI (FLUX.2 klein) or AI Gateway for OpenAI (`IMAGE_PROVIDER`, `GATEWAY_ID`) |
 | `DRAWTIFY_WORKFLOW` | Workflow |
 | `ASSETS` | static assets |
 
 ## Notes
 
-- `gpt-image-2` can't do transparent backgrounds; the doodle style uses `gpt-image-1.5`.
-- `optional_params` in a style are dropped on retry if the model rejects them.
+- Neither provider does transparency: the doodle style is black-on-white and `assets/transparent.js` makes it transparent in the browser.
+- Workers AI image editing takes multipart input (`input_image_0`, optional `width`/`height`); see `run_workers_ai` in `src/workflow.py`.
 - Deploy: `npx wrangler deploy`. KV changes are live immediately.
