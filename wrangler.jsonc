@@ -12,10 +12,8 @@
 		"directory": "./assets/",
 		"binding": "ASSETS"
 	},
-	"vars": {
-		// ID of the AI Gateway used for image generation (create it in the dashboard)
-		"GATEWAY_ID": "drawtify"
-	},
+	// Optional: route image generation through an AI Gateway by adding
+	// "vars": { "GATEWAY_ID": "<your-gateway-id>" }
 	"r2_buckets": [
 		{
 			"binding": "MY_BUCKET",

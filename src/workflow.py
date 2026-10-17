@@ -55,19 +55,23 @@ class DrawtifyWorkflow(WorkflowEntrypoint):
                 prompt = f"{prompt} {additional}"
 
             base_inputs = {"prompt": prompt, "images": [data_uri], **style["params"]}
-            gateway = {"gateway": {"id": str(env.GATEWAY_ID)}}
+            # Route through an AI Gateway only if GATEWAY_ID is configured
+            gateway_id = getattr(env, "GATEWAY_ID", None)
+            run_args = (
+                [{"gateway": {"id": str(gateway_id)}}] if gateway_id else []
+            )
 
             optional = style.get("optional_params") or {}
             try:
                 response = await env.AI.run(
-                    style["model"], {**base_inputs, **optional}, gateway
+                    style["model"], {**base_inputs, **optional}, *run_args
                 )
             except Exception as err:
                 if not optional:
                     raise
                 # Model/gateway didn't like the optional params: retry without them.
                 print(f"Retrying {style['model']} without optional params: {err}")
-                response = await env.AI.run(style["model"], base_inputs, gateway)
+                response = await env.AI.run(style["model"], base_inputs, *run_args)
 
             # Convert JsProxy response to plain Python dict for serialization
             response_py = response.to_py()
