@@ -831,3 +831,22 @@ body.capture {
 .btn-download:active {
   transform: scale(0.95);
 }
+
+.btn-upload {
+  margin-top: 14px;
+  padding: 10px 22px;
+  background: rgba(0,0,0,0.45);
+  color: var(--color-white);
+  border: 3px solid rgba(255,255,255,0.8);
+  border-radius: 25px;
+  font-family: var(--font-silly);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+
+.btn-upload:active {
+  transform: scale(0.95);
+}

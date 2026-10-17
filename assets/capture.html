@@ -15,7 +15,7 @@
     <div class="camera-view" id="cameraView">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="canvas" hidden></canvas>
-      <input type="file" id="fileInput" accept="image/*" capture="user" hidden>
+      <input type="file" id="fileInput" accept="image/*" hidden>
       
       <div class="capture-overlay">
         <div class="capture-header">
@@ -28,6 +28,7 @@
         </button>
         
         <p class="capture-hint">Tap to capture</p>
+        <button type="button" class="btn-upload" id="uploadBtn">&#128193; Upload a photo instead</button>
       </div>
     </div>
 

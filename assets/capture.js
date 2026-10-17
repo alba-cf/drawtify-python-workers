@@ -32,6 +32,7 @@ const retryBtn = document.getElementById('retryBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const styleOptions = document.querySelectorAll('.style-option');
 const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
 const pageTitle = document.querySelector('title');
 const captureHeaderH2 = document.querySelector('.capture-header h2');
 const captureHeaderP = document.querySelector('.capture-header p');
@@ -367,25 +368,44 @@ function showCameraFallback(msg) {
   errorView.querySelector('.error-content').appendChild(uploadBtn);
 }
 
-// Handle file upload fallback
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+// Handle an uploaded photo (from the "Upload a photo" button or the camera-error fallback).
+// The image is scaled down and re-encoded as JPEG in the browser: phone photos can be
+// many megabytes, and this also normalises orientation and formats.
+const MAX_UPLOAD_DIMENSION = 1600;
 
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    previewImg.src = ev.target.result;
-    capturedBlob = file;
+async function useUploadedFile(file) {
+  try {
+    const bitmap = await createImageBitmap(file); // respects EXIF orientation
+    const scale = Math.min(1, MAX_UPLOAD_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; // flatten transparent PNGs onto white
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    // Hide error, show preview
+    capturedBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    previewImg.src = canvas.toDataURL('image/jpeg', 0.9);
+
+    stopCamera();
+    cameraView.classList.add('hidden');
     errorView.classList.add('hidden');
     previewView.classList.remove('hidden');
 
-    // Clean up upload button
-    const uploadBtn = errorView.querySelector('.upload-fallback-btn');
-    if (uploadBtn) uploadBtn.remove();
-  };
-  reader.readAsDataURL(file);
+    const fallbackBtn = errorView.querySelector('.upload-fallback-btn');
+    if (fallbackBtn) fallbackBtn.remove();
+  } catch (err) {
+    console.error('Could not read image:', err);
+    showError("Sorry, we couldn't read that image. Try a JPEG or PNG photo.");
+  }
+}
+
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  e.target.value = ''; // allow picking the same file again later
+  if (file) useUploadedFile(file);
 });
 
 // Reset to camera
@@ -426,6 +446,8 @@ shutterBtn.addEventListener('click', capturePhoto);
 retakeBtn.addEventListener('click', () => {
   previewView.classList.add('hidden');
   cameraView.classList.remove('hidden');
+  // The camera was stopped after the shot: start it again
+  if (!stream) startCamera();
 });
 makeSlopBtn.addEventListener('click', uploadAndProcess);
 shareBtn.addEventListener('click', sharePhotos);
